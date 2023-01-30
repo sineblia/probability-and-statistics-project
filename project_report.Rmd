@@ -1,6 +1,6 @@
 ---
 title: "Foundations of Probability and Statistics, Project"
-author: "Simone Bellavia"
+author: "Emiliano Capasso, Antonello Scarcella, Simone Bellavia"
 date: '2022-12-05'
 geometry: "left=2cm,right=2cm,top=0.5cm,bottom=1.5cm"
 output: pdf_document
@@ -22,35 +22,34 @@ library(pROC)  # for ROC curve
 library(gmodels) # for CrossTable
 library(performance) # for compare_performance
 library(tree) # for Decision Trees
+library(ggplot2) # for plots
+library(reshape2) # for melt function
 ```
 
 # Introduction to Analysis
 
-The data come from a study conducted by Davide Chicco and Giuseppe Jurman, published on _BMC Medical Informatics and Decision Making_. [1] In the paper, a dataset of patients with heart failure collected in 2015 is analyzed. The goal was to both predict the patients survival, and rank the features corresponding to the most important risk factors.
-
-Cardiovascular diseases (CVDs) are the leading cause of death globally, taking an estimated 17.9 million lives each year. [2] CVDs are a group of disorders of the heart and blood vessels and include coronary heart disease, cerebrovascular disease, rheumatic heart disease and other conditions. More than four out of five CVD deaths are due to heart attacks and strokes, and one third of these deaths occur prematurely in people under 70 years of age.
-
-The clinical community groups heart failure into two types based on the ejection fraction value, that is the proportion of blood pumped out of the heart during a single contraction, given as a percentage with physiological values ranging between 50% and 75%. The former is heart failure due to reduced ejection fraction (HFrEF), previously known as heart failure due to left ventricular (LV) systolic dysfunction or systolic heart failure and characterized by an ejection fraction smaller than 40% [3]. The latter is heart failure with preserved ejection fraction (HFpEF), formerly called diastolic heart failure or heart failure with normal ejection fraction. In this case, the left ventricle contracts normally during systole, but the ventricle is stiff and fails to relax normally during diastole, thus impairing filling.
-
-People with cardiovascular disease or who are at high cardiovascular risk (due to the presence of one or more risk factors) need early detection and management. Machine learning models can be useful for preventing cardiovascular disease. By analyzing data such as patient medical history, lifestyle habits, and test results, machine learning models can identify potential risk factors for cardiovascular disease and help doctors develop personalized treatment plans for their patients. These models can also help doctors make more accurate diagnoses, which can be especially important in detecting early signs of cardiovascular disease before it becomes more serious. In addition, machine learning models can be used to monitor a patient's condition over time and help doctors identify any changes that may indicate the need for additional treatment.
-
-This project will mainly involve three different sections: one of descriptive and exploratory analysis; one of test set creation; and finally one related to the application of the linear model. From these, conclusions will be drawn.
+TBD
 
 # Descriptive Analysis
 
-In this section, we will provide a brief overview of the data, including the number of observations, the range and distribution of each variable, and any missing values.
+TBD
 
-First, we will import the data and use the str() function to get a sense of the structure and contents of the dataset. We will also use the summary() function to get a more detailed summary of the variables, including their mean, median, and standard deviation.
+## Importing data
 
 ```{r}
 # import data
-data <- read.csv("heart_failure_clinical_records_dataset.csv", 
-                    header=TRUE, 
-                    stringsAsFactors = TRUE)
+data <- read.csv("data.csv", 
+                    header=TRUE)
+```
 
+## First exploration
+
+```{r}
 # get structure of dataset
 str(data)
+```
 
+```{r}
 # get summary of variables
 summary(data)
 ```
@@ -59,213 +58,80 @@ summary(data)
 # getting the head of dataset
 head(data)
 ```
-The dataset contains 299 observations and 13 variables. 
-The variables age, creatinine_phosphokinase, ejection_fraction, platelets, serum_creatinine, and serum_sodium are numeric, with ranges and distributions as follows:
 
-- age: the age of the patients ranges from 40 to 95 years, with a mean of 60.83;
-- creatinine_phosphokinase: the level of the CPK enzyme in the blood ranges from 23.0 to 7861.0 mcg/L, with a mean of 581.8;
-- ejection_fraction: the percentage of blood leaving the heart at each contraction ranges from 14 to 80;
-- platelets: the platelet count in the blood ranges from 25100 to 850000 kiloplatelets/mL, with a mean of 263358;
-- serum_creatinine: the level of serum creatinine in the blood ranges from 0.500 to 9.400 mg/dL, with a mean of 1.394;
-- serum_sodium: the level of serum sodium in the blood ranges from 113.0 to 148.0 mEq/L, with a mean of 136.6.
-
-Other variables are binary, and include:
-
-- anaemia: indication of the decrease of red blood cells or hemoglobin;
-- diabetes: presence of diabates;
-- high_blood_pressure: if the patient has hypertension;
-- sex: male or female;
-- smoking: if the patient smokes;
-- *DEATH_EVENT:* target feature.
+## Missing Values
 
 Checking if there are missing values:
 
 ```{r}
-#check for missing values
+# check for missing values
 colSums(is.na(data))
 ```
 
-There aren't missing values in the considered dataset.
-
-Through the scatter plot matrix it is possible to see all the different Pearson correlations within the variables and the distributions.
+There aren't missing values in the considered dataset, except for 32th feature 'X' that is full of NA, we drop it.
 
 ```{r}
-pairs.panels(data)
+data <- data %>% select(-X)
 ```
 
+We also drop id because it is not needed
+
 ```{r}
-# summary of categorical variables
-table(data$anaemia)
-table(data$diabetes)
-table(data$high_blood_pressure)
-table(data$sex)
-table(data$smoking)
-table(data$DEATH_EVENT)
+data <- data %>% select(-id)
 ```
 
-Regarding the dataset imbalance, the survived patients (death event = 0) are 203, while the dead patients (death event = 1) are 96. In statistical terms, there are 32.11% positives and 67.89% negatives.
+Checking if the column has been dropped.
 
 ```{r}
-# histogram of age
-hist(data$age)
+colnames(data)
+```
 
-# boxplot of ejection_fraction
-boxplot(data$ejection_fraction)
+## Second exploration
+
+```{r}
+describe(data)
+```
+
+Let's see the frequency of cancer diagnosis (if benignant or malignant)
+
+```{r}
+ggplot(data, aes(x = diagnosis)) + 
+  geom_bar(aes(y = (..count..)/sum(..count..))) + 
+  labs(x = "Diagnosis", y = "Frequency", title = "Frequency of Cancer Stages")
+```
+
+Benignant cancers are way more than malignant.
+
+Let's see the correlation map with a heatmap.
+
+```{r}
+# Remove non-numeric columns
+numeric_data <- data[, sapply(data, is.numeric)]
+
+# Create correlation matrix
+corr_matrix <- cor(numeric_data)
+
+# Create heatmap
+library(ggplot2)
+library(reshape2)
+melted_matrix <- melt(corr_matrix)
+ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white",
+                       midpoint = 0, limit = c(-1,1), name = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Correlation Map")
 ```
 
 # Tests
 
-```{r}
-data$DEATH_EVENT <- as.factor(data$DEATH_EVENT)
-```
-
-
-In this section, we will conduct a series of statistical tests to evaluate the relationships between the variables and the target outcome of interest, which is the death event.
-
-We can perform some tests to investigate potential relationships between the variables. For example, we can use the t.test() function to perform a t-test to compare the means of the age variable between the two levels of the DEATH_EVENT variable. We can also use the chisq.test() function to perform a chi-square test to investigate the relationship between the DEATH_EVENT variable and the sex variable.
-
-```{r}
-# t-test of age between levels of DEATH_EVENT
-t.test(age ~ DEATH_EVENT, data=data)
-
-# chi-square test of DEATH_EVENT and sex
-chisq.test(data$DEATH_EVENT, data$sex)
-```
-
-First, we will use the chisq.test() function to conduct chi-square tests of independence between each binary variable and the death event. This will help us determine whether there are any significant associations between these variables and the death event.
-
-```{r}
-# conduct chi-square tests
-anaemia_test <- chisq.test(data$anaemia, data$DEATH_EVENT)
-blood_pressure_test <- chisq.test(data$high_blood_pressure, data$DEATH_EVENT)
-diabetes_test <- chisq.test(data$diabetes, data$DEATH_EVENT)
-sex_test <- chisq.test(data$sex, data$DEATH_EVENT)
-smoking_test <- chisq.test(data$smoking, data$DEATH_EVENT)
-
-# print results
-anaemia_test
-blood_pressure_test
-diabetes_test
-sex_test
-smoking_test
-```
-
-Next, we will use the cor.test() function to conduct Pearson's correlation tests between each numeric variable and the death event. This will help us determine whether there are any significant linear relationships between these variables and the death event.
-
-```{r}
-# # conduct Pearson's correlation tests
-# age_test <- cor.test(data$age, data$DEATH_EVENT)
-# cpk_test <- cor.test(data$creatinine_phosphokinase, data$DEATH_EVENT)
-# ejection_fraction_test <- cor.test(data$ejection_fraction, data$DEATH_EVENT)
-# platelets_test <- cor.test(data$platelets, data$DEATH_EVENT)
-# serum_creatinine_test <- cor.test(data$serum_creatinine, data$DEATH_EVENT)
-# serum_sodium_test <- cor.test(data$serum_sodium, data$DEATH_EVENT)
-# 
-# # print results
-# age_test
-# cpk_test
-# ejection_fraction_test
-# platelets_test
-# serum_creatinine_test
-# serum_sodium_test
-```
+TBD
 
 # Linear Model
 
-## GLM
-
-In this section, we will build a linear regression model to predict the probability of a death event based on the other variables in the dataset.
-
-First, we will split the dataset into a training set and a test set using the createDataPartition() function from the caret package. This will allow us to train the model on the training set and evaluate its performance on the test set.
-
-```{r}
-# split data into training and test sets
-set.seed(123)
-indices <- createDataPartition(data$DEATH_EVENT, p = 0.8, list = FALSE)
-training_data <- data[indices, ]
-test_data <- data[-indices, ]
-```
-
-Next, we will use the glm() function to fit a logistic regression model to the training data. 
-This model will take the form DEATH_EVENT ~ X1 + X2 + ... + Xk, where X1, X2, ..., Xk are the predictor variables and DEATH_EVENT is the binary outcome variable.
-
-```{r}
-# fit logistic regression model
-model <- glm(DEATH_EVENT ~ ., data = training_data, family = binomial)
-```
-
-Next, we will use the summary() function to evaluate the model. This will provide information about the coefficients of the model, the goodness of fit, and the significance of each predictor variable.
-
-```{r}
-# evaluate model
-summary(model)
-```
-
-Finally, we will use the predict() function to generate predictions on the test set, and evaluate the performance of the model using the confusionMatrix() function from the caret package. This will give us a confusion matrix, which will provide information about the true and false positive and negative rates of the model.
-
-```{r}
-# generate predictions on test set
-predictions <- predict(model, test_data, type = "response")
-
-# evaluate model performance
-Predict<-rep(0,dim(test_data)[1])
-Predict[predictions>=0.5]=1
-Actual<-test_data$DEATH_EVENT
-table(Predict, Actual)
-```
-
-We get a misclassification rate of 18.7% with our first draft of the logistic regression model.
-
-Attempting to improve the model by removing non-significant variables...
-
-```{r}
-model <- glm(DEATH_EVENT ~ age + ejection_fraction + serum_creatinine + time, data = training_data, family = binomial)
-summary(model)
-```
-
-```{r}
-# generate predictions on test set
-predictions <- predict(model, test_data, type = "response")
-
-# evaluate model performance
-Predict<-rep(0,dim(test_data)[1])
-Predict[predictions>=0.5]=1
-Actual<-test_data$DEATH_EVENT
-table(Predict, Actual)
-```
-
-Model performance improved from 18.7% misclassification rate to 15.2%.
-
-## Decision Tree
-
-```{r}
-tree_data <- tree(DEATH_EVENT ~ ., data=data)
-summary(tree_data)
-```
-
-```{r}
-plot(tree_data)
-text(tree_data, pretty=0)
-```
-Using the unpruned tree to predict death event:
-
-```{r}
-tree.pred<-predict(tree_data, test_data, type = "class")
-table(tree.pred, test_data$DEATH_EVENT)
-```
-
-```{r}
-# misclassification
-mean(tree.pred!=test_data$DEATH_EVENT)
-```
-
-```{r}
-# accuracy 
-mean(tree.pred==test_data$DEATH_EVENT)
-```
+TBD
 
 # Bibliography
 
-[1] https://bmcmedinformdecismak.biomedcentral.com/articles/10.1186/s12911-020-1023-5
-[2] https://www.who.int/health-topics/cardiovascular-diseases#tab=tab_1
-[3] https://bmcmedinformdecismak.biomedcentral.com/articles/10.1186/s12911-020-1023-5#ref-CR4
+[1] TBD
