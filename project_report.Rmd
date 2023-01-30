@@ -114,14 +114,22 @@ ggplot(data, aes(x = diagnosis)) +
 
 Benignant cancers are way more than malignant.
 
+Converting the diagnosis values in numeric. Malignant == 1, Benign == 0.
+
+```{r}
+data$diagnosis <- as.numeric(data$diagnosis == "M")
+
+str(data)
+```
+
 Let's see the correlation map with a heatmap.
 
 ```{r}
 # Remove non-numeric columns
-numeric_data <- data[, sapply(data, is.numeric)]
+# numeric_data <- data[, sapply(data, is.numeric)]
 
 # Create correlation matrix
-corr_matrix <- cor(numeric_data)
+corr_matrix <- cor(data)
 
 # Create heatmap
 library(ggplot2)
