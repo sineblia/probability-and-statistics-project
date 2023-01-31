@@ -11,20 +11,13 @@ knitr::opts_chunk$set(warning=FALSE,
                       message=FALSE,
                       tidy.opts=list(width.cutoff = 80),
                       tidy = TRUE)
-library(tidyverse) # for tidyverse
-library(tidymodels) # for tidymodels
-library(class) # for knn
 library(caret) # for createDataPartition
-library(psych) # for dummy.code
-library(fastDummies) # for dummy_cols()
-library(e1071) # for Naive Bayes
-library(pROC)  # for ROC curve
-library(gmodels) # for CrossTable
 library(performance) # for compare_performance
-library(tree) # for Decision Trees
 library(ggplot2) # for plots
 library(reshape2) # for melt function
 library(gridExtra) # to arrange plots in a grid 
+library(factoextra) # for PCA
+library(corrplot) # for correlation between variables and PCA
 ```
 
 # Introduction to Analysis
@@ -177,7 +170,7 @@ Mean values of texture, smoothness, symmetry or fractual dimension does not show
 # Exclude the response variable 'Diagnosis'
 data_cont <- data[, which(colnames(data) != "diagnosis")]
 
-# Scale the continuous features (if necessary)
+# Scale th°e continuous features (if necessary)
 data_cont_scaled <- scale(data_cont)
 
 # Perform PCA on the scaled data
@@ -191,6 +184,23 @@ plot(pca$x[,1:2], col=ifelse(data$Diagnosis==0, "blue", "red"),
      main="PCA of Continuous Features", xlab="PC1", ylab="PC2")
 legend("topright", legend=c("B", "M"), col=c("blue", "red"), pch=1)
 ```
+
+getting variables
+```{r}
+
+all_var <- get_pca_var(pca)
+all_var
+
+```
+
+plotting correlations
+```{r}
+
+corrplot(all_var$cos2, is.corr = FALSE)
+
+```
+
+##
 
 # Tests
 
