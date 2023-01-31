@@ -152,8 +152,8 @@ plots <- lapply(1:length(features_mean), function(x) {
                               fill = as.factor(data$diagnosis))) +
     geom_histogram(binwidth = (max(data[,features_mean[x]]) - min(data[,features_mean[x]]))/50, 
                   alpha = 0.5, aes(color = as.factor(data$diagnosis))) +
-    scale_fill_manual(values = c("red", "green")) +
-    scale_color_manual(values = c("red", "green")) +
+    scale_fill_manual(values = c("green", "red")) +
+    scale_color_manual(values = c("green", "red")) +
     ggtitle(features_mean[x]) +
     theme(plot.title = element_text(hjust = 0.5)) +
     labs(fill = "Diagnosis", color = "Diagnosis")
@@ -163,7 +163,13 @@ plots <- lapply(1:length(features_mean), function(x) {
 grid.arrange(grobs = plots, ncol = 2)
 ```
 
+This code plots histograms of 10 features of a dataset with a binary diagnosis outcome. 
+The histograms are stacked and show the distribution of each feature for each diagnosis type (red for "M" and green for "B"). 
+The histograms are plotted in a 5x2 grid, with each feature in a separate plot and labeled with the feature name. 
+The code uses ggplot2 library in R for plotting and gridExtra library for arranging the plots in a grid.
+The resulting plot is a comparison of the distributions of each feature between the two diagnosis groups.
 
+### Aggiungere PCA per ridurre la dimensionalità
 
 # Tests
 
