@@ -24,6 +24,7 @@ library(performance) # for compare_performance
 library(tree) # for Decision Trees
 library(ggplot2) # for plots
 library(reshape2) # for melt function
+library(gridExtra)
 ```
 
 # Introduction to Analysis
@@ -38,8 +39,8 @@ TBD
 
 ```{r}
 # import data
-data <- read.csv("data.csv", 
-                    header=TRUE)
+data <- read.csv("data.csv",
+                    header = TRUE)
 ```
 
 ## First exploration
@@ -125,9 +126,6 @@ str(data)
 Let's see the correlation map with a heatmap.
 
 ```{r}
-# Remove non-numeric columns
-# numeric_data <- data[, sapply(data, is.numeric)]
-
 # Create correlation matrix
 corr_matrix <- cor(data)
 
@@ -143,6 +141,29 @@ ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggtitle("Correlation Map")
 ```
+
+Features vs Diagnosis
+
+```{r}
+features_mean <- names(data)[2:12]
+
+plots <- lapply(1:length(features_mean), function(x) {
+  g <- ggplot(data, aes_string(x = features_mean[x], fill = as.factor(data$diagnosis))) +
+    geom_histogram(binwidth = (max(data[,features_mean[x]]) - min(data[,features_mean[x]]))/50, alpha = 0.5, aes(color = as.factor(data$diagnosis))) +
+    scale_fill_manual(values = c("red", "green")) +
+    scale_color_manual(values = c("red", "green")) +
+    ggtitle(features_mean[x]) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    labs(fill = "Diagnosis", color = "Diagnosis")
+  
+  return(g)
+})
+
+grid.arrange(grobs = plots, ncol = 2)
+
+```
+
+
 
 # Tests
 
