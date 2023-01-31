@@ -148,19 +148,19 @@ Features vs Diagnosis
 features_mean <- names(data)[2:12]
 
 plots <- lapply(1:length(features_mean), function(x) {
-  g <- ggplot(data, aes_string(x = features_mean[x], fill = as.factor(data$diagnosis))) +
-    geom_histogram(binwidth = (max(data[,features_mean[x]]) - min(data[,features_mean[x]]))/50, alpha = 0.5, aes(color = as.factor(data$diagnosis))) +
+  g <- ggplot(data, aes_string(x = features_mean[x], 
+                              fill = as.factor(data$diagnosis))) +
+    geom_histogram(binwidth = (max(data[,features_mean[x]]) - min(data[,features_mean[x]]))/50, 
+                  alpha = 0.5, aes(color = as.factor(data$diagnosis))) +
     scale_fill_manual(values = c("red", "green")) +
     scale_color_manual(values = c("red", "green")) +
     ggtitle(features_mean[x]) +
     theme(plot.title = element_text(hjust = 0.5)) +
     labs(fill = "Diagnosis", color = "Diagnosis")
-  
   return(g)
 })
 
 grid.arrange(grobs = plots, ncol = 2)
-
 ```
 
 
