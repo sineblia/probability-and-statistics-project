@@ -24,7 +24,7 @@ library(performance) # for compare_performance
 library(tree) # for Decision Trees
 library(ggplot2) # for plots
 library(reshape2) # for melt function
-library(gridExtra)
+library(gridExtra) # to arrange plots in a grid 
 ```
 
 # Introduction to Analysis
@@ -169,7 +169,28 @@ The histograms are plotted in a 5x2 grid, with each feature in a separate plot a
 The code uses ggplot2 library in R for plotting and gridExtra library for arranging the plots in a grid.
 The resulting plot is a comparison of the distributions of each feature between the two diagnosis groups.
 
-### Aggiungere PCA per ridurre la dimensionalità
+Mean values of texture, smoothness, symmetry or fractual dimension does not show a particular preference of one diagnosis over the other. 
+
+## Reducing dimensionality
+
+```{r}
+# Exclude the response variable 'Diagnosis'
+data_cont <- data[, which(colnames(data) != "diagnosis")]
+
+# Scale the continuous features (if necessary)
+data_cont_scaled <- scale(data_cont)
+
+# Perform PCA on the scaled data
+pca <- prcomp(data_cont_scaled)
+
+# Summarize the results
+summary(pca)
+
+# Plot the first two principal components
+plot(pca$x[,1:2], col=ifelse(data$Diagnosis==0, "blue", "red"),
+     main="PCA of Continuous Features", xlab="PC1", ylab="PC2")
+legend("topright", legend=c("B", "M"), col=c("blue", "red"), pch=1)
+```
 
 # Tests
 
