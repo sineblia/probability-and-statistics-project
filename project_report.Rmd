@@ -124,8 +124,6 @@ Let's see the correlation map with a heatmap.
 corr_matrix <- cor(data)
 
 # Create heatmap
-library(ggplot2)
-library(reshape2)
 melted_matrix <- melt(corr_matrix)
 ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) +
   geom_tile(color = "white") +
