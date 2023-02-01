@@ -11,6 +11,7 @@ knitr::opts_chunk$set(warning=FALSE,
                       message=FALSE,
                       tidy.opts=list(width.cutoff = 80),
                       tidy = TRUE)
+library(tidyverse) # for tidyverse
 library(caret) # for createDataPartition
 library(performance) # for compare_performance
 library(ggplot2) # for plots
