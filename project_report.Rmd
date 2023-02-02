@@ -142,6 +142,7 @@ ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) +
   ggtitle("Correlation Map")
 ```
 
+
 Features vs Diagnosis
 
 ```{r}
@@ -163,6 +164,17 @@ plots <- lapply(1:length(features_mean), function(x) {
 grid.arrange(grobs = plots, ncol = 2, widths = c(60, 60), height = 60)
 ```
 
+From the heatmap we analyse the features against the response variable diagnosis,
+and we can see the most correlated are those with a value higher than 0.6.
+So we can discard: 
+- all the variables "*_se"
+- texture_*
+- smoothness_*
+- symmerty_*
+- fractal_dimension_*
+
+on the remains we can conduct more in-depth analysis
+
 This code plots histograms of 10 features of a dataset with a binary diagnosis outcome. 
 The histograms are stacked and show the distribution of each feature for each diagnosis type (red for "M" and green for "B"). 
 The histograms are plotted in a 5x2 grid, with each feature in a separate plot and labeled with the feature name. 
@@ -173,7 +185,79 @@ Mean values of texture, smoothness, symmetry or fractual dimension does not show
 
 ## Feature Selection
 
+### Covariance and Correlation
+
+followed the analysis above we can explore more the variables left.
+
+```{r}
+cov(data[c("radius_mean","perimeter_mean","area_mean","radius_worst",
+"perimeter_worst","area_worst","diagnosis")])
+
+cor(data[c("radius_mean","perimeter_mean","area_mean","radius_worst",
+"perimeter_worst","area_worst","diagnosis")])
+
+pairs(data[c("radius_mean","perimeter_mean","area_mean","radius_worst",
+"perimeter_worst","area_worst")])
+```
+
+from the plot and the correlation values we can see a very strong correlation between all the features
+in this table so we can drop them all except for one. We select the feature which has the higher correlation with the response variable diagnosis
+so we select the perimeter_worst with a value of 0.783.
+There is also a strong correlation between the radius_worst, perimeter_worst and area_worst.
+
+we now test the last remained variables
+
+```{r}
+cov(data[c("concavity_mean","compactness_mean","concave.points_mean",
+"concavity_worst","compactness_worst","concave.points_worst")])
+
+cor(data[c("concavity_mean","compactness_mean","concave.points_mean",
+"concavity_worst","compactness_worst","concave.points_worst","diagnosis")])
+
+pairs(data[c("concavity_mean","compactness_mean","concave.points_mean",
+"concavity_worst","compactness_worst","concave.points_worst")])
+```
+
+from the analysis and the plot we can see that concave.point_worst and concave.points_mean
+are strongly correlated so we keep only concave.point_worst which has the higher
+correlation with diagnosis.
+Same goes for concavity and compacteness mean with they respective worst have a correlation
+value less than 0.9 but still strongly correlated.
+We keep concavity_worst and compactness_mean whose have the higher correlation
+with the diagnosis (0.659,0.696)
+
+as a summary we plot the correlation matrix of selected features
+```{r}
+cor(data[c("perimeter_worst","concavity_worst","compactness_mean","concave.points_worst")])
+
+pairs(data[c("perimeter_worst","concavity_worst","compactness_mean","concave.points_worst")])
+```
+
 # Tests
+
+## Chi-sq Test
+
+for further analysis we want to test the indipendence of the variable 
+where the correlation values is in the range of 0.8-0.9
+in order to do this we use the Chi-squared test
+
+H0: The two variables are independent.
+H1: The two variables relate to each other.
+
+```{r}
+chisq.test(data$concavity_worst,data$compactness_mean, correct = FALSE)
+```
+
+p value is > 0.05 so we accept the null hypotesis, the two variable are indipendent
+
+```{r}
+chisq.test(data$concave.points_worst,data$perimeter_worst, correct = FALSE)
+```
+p value is > 0.05 so we accept the null hypotesis, the two variable are indipendent
+```{r}
+chisq.test(data$concave.points_worst,data$concavity_worst, correct = FALSE)
+```
+p value is < 0.05 so we reject the null hypotesis, the two variable are dependant
 
 we want to estimate the difference between the mean of radius size of all benign and all malignant
 tumor to understand if the difference is real of given by sampling error. To do so, we draw two samples, one from the population of malignant tumor and another
