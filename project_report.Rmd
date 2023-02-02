@@ -122,24 +122,30 @@ str(data)
 Let's see the correlation map with a heatmap.
 
 ```{r}
-# Create correlation matrix
+# Calculate the correlation matrix
 corr_matrix <- cor(data)
 
-# Create heatmap
+# Melt the correlation matrix into a data frame
 melted_matrix <- melt(corr_matrix)
-ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) +
+
+# Add the correlation coefficient as a label to each tile
+melted_matrix$label <- round(melted_matrix$value, 2)
+
+# Plot the heatmap using ggplot2
+ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) + 
   geom_tile(color = "white") +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white",
-                       midpoint = 0, limit = c(-1,1), name = "Correlation") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(aes(label = label), color = "black", size = 3) + 
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0,
+    limit = c(-1, 1), name = "Correlation") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   ggtitle("Correlation Map")
 ```
 
 Features vs Diagnosis
 
 ```{r}
-features_mean <- names(data)[2:12]
+features_mean <- names(data)[2:11]
 
 plots <- lapply(1:length(features_mean), function(x) {
   g <- ggplot(data, aes_string(x = features_mean[x], 
@@ -154,7 +160,7 @@ plots <- lapply(1:length(features_mean), function(x) {
   return(g)
 })
 
-grid.arrange(grobs = plots, ncol = 2)
+grid.arrange(grobs = plots, ncol = 2, widths = c(60, 60), height = 60)
 ```
 
 This code plots histograms of 10 features of a dataset with a binary diagnosis outcome. 
@@ -164,6 +170,8 @@ The code uses ggplot2 library in R for plotting and gridExtra library for arrang
 The resulting plot is a comparison of the distributions of each feature between the two diagnosis groups.
 
 Mean values of texture, smoothness, symmetry or fractual dimension does not show a particular preference of one diagnosis over the other. 
+
+## Feature Selection
 
 # Tests
 
