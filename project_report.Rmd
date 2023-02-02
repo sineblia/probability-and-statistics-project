@@ -165,44 +165,6 @@ The resulting plot is a comparison of the distributions of each feature between 
 
 Mean values of texture, smoothness, symmetry or fractual dimension does not show a particular preference of one diagnosis over the other. 
 
-## Reducing dimensionality
-
-```{r}
-# Exclude the response variable 'Diagnosis'
-data_cont <- data[, which(colnames(data) != "diagnosis")]
-
-# Scale th°e continuous features (if necessary)
-data_cont_scaled <- scale(data_cont)
-
-# Perform PCA on the scaled data
-pca <- prcomp(data_cont_scaled)
-
-# Summarize the results
-summary(pca)
-
-# Plot the first two principal components
-plot(pca$x[,1:2], col=ifelse(data$Diagnosis==0, "blue", "red"),
-     main="PCA of Continuous Features", xlab="PC1", ylab="PC2")
-legend("topright", legend=c("B", "M"), col=c("blue", "red"), pch=1)
-```
-
-getting variables
-```{r}
-
-all_var <- get_pca_var(pca)
-all_var
-
-```
-
-plotting correlations
-```{r}
-
-corrplot(all_var$cos2, is.corr = FALSE)
-
-```
-
-##
-
 # Tests
 
 we want to estimate the difference between the mean of radius size of all benign and all malignant
@@ -210,70 +172,7 @@ tumor to understand if the difference is real of given by sampling error. To do 
 from the population of benign tumor. These two samples are independent because they
 are drawn from two different populations, and the samples have no effect on each other.
 
-```{r}
-mdf <- data[data$diagnosis == "B", ] # group of Malignant tumor
-bdf <- data[data$diagnosis == "M", ] # group of Benign tumor
-# Density Plot
-dp <- ggplot(df, aes(x=radius_mean, group=diagnosis,fill=diagnosis)) +
-geom_density(alpha=0.5) +
-scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
-theme_bw()
-
-dp
-```
-
-prior to run test on difference on mean, let's test
-the normality first plotting the graph
-```{r}
-par(mfrow=c(1,2))
-qqnorm(mdf$radius_mean, main = "Radius Mean distribution")
-qqline(mdf$radius_mean)
-qqnorm(bdf$radius_mean, main = "Radius Mean distribution")
-qqline(bdf$radius_mean)
-```
-
-then using the Shapiro-Wilk normality test
-
-```{r}
-shapiro.test(mdf$radius_mean)
-shapiro.test(bdf$radius_mean)
-```
-
-the p-value for the Benign group is > 0.05 so we accept the hypotesis
-of normality for the group, whilst the malignant does not follow normality
-
-we can try to remove the outliars and test again for normality
-
-```{r}
-# Calculate the IQR
-IQR <- IQR(mdf$radius_mean)
-
-# Calculate the lower and upper bounds
-lower_bound <- quantile(mdf$radius_mean, 0.25) - 1.5 * IQR
-upper_bound <- quantile(mdf$radius_mean, 0.75) + 1.5 * IQR
-
-# Remove outliers
-data_df_without_outliers <- mdf %>%
-  filter(mdf$radius_mean >= lower_bound & mdf$radius_mean <= upper_bound)
-```
-
-we want to evaluate if the new sample is still acceptable
-```{r}
-boxplot(mdf$radius_mean,data_df_without_outliers$radius_mean,bdf$radius_mean, main="M/MTumor", ylab = "Tumor mean Radius (mm)")
-```
-
-then we test again for normality
-```{r}
-shapiro.test(data_df_without_outliers$radius_mean)
-```
-
-now we can make a test to evaluate the difference of the mean
-```{r}
-t.test(bdf$radius_mean,data_df_without_outliers$radius_mean, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
-```
-
-p value is smaller than 0.05 so we can reject the null hypotesis. So the difference
-between the mean is not by chance and it is a marker of a malignant tumor
+TBD
 
 # Linear Model
 
