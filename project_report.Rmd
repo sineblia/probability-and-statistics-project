@@ -18,6 +18,7 @@ library(ggplot2) # for plots
 library(reshape2) # for melt function
 library(gridExtra) # to arrange plots in a grid 
 library(factoextra) # for PCA
+library(ggpubr)
 library(corrplot) # for correlation between variables and PCA
 ```
 
@@ -233,9 +234,7 @@ cor(data[c("perimeter_worst","concavity_worst","compactness_mean","concave.point
 pairs(data[c("perimeter_worst","concavity_worst","compactness_mean","concave.points_worst")])
 ```
 
-# Tests
-
-## Chi-sq Test
+### Chi-sq Test
 
 for further analysis we want to test the indipendence of the variable 
 where the correlation values is in the range of 0.8-0.9
@@ -259,12 +258,65 @@ chisq.test(data$concave.points_worst,data$concavity_worst, correct = FALSE)
 ```
 p value is < 0.05 so we reject the null hypotesis, the two variable are dependant
 
-we want to estimate the difference between the mean of radius size of all benign and all malignant
-tumor to understand if the difference is real of given by sampling error. To do so, we draw two samples, one from the population of malignant tumor and another
-from the population of benign tumor. These two samples are independent because they
-are drawn from two different populations, and the samples have no effect on each other.
+even though those last two variable are correlated, we decide not to drop any more feature
 
-TBD
+```{r}
+
+data_fs <- data[c("perimeter_worst","concavity_worst","compactness_mean","concave.points_worst","perimeter_worst","diagnosis")]
+
+```
+
+# Test
+
+We want to determine whether the features selected are 
+significantly different between healthy (benign) and diseased patients (malignant).
+
+A t-test assigns a “t” test statistic value to each feature. A good feature, 
+represented by little to no overlap of the distributions and a large difference in means, would have a high “t” value.
+
+# TBD do the normality test
+
+```{r}
+cm <- ggplot(df, aes(x=compactness_mean, group=diagnosis,fill=diagnosis)) +
+geom_density(alpha=0.5) +
+scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw()
+
+pw <- ggplot(df, aes(x=perimeter_worst, group=diagnosis,fill=diagnosis)) +
+geom_density(alpha=0.5) +
+scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw()
+
+cw <- ggplot(df, aes(x=concavity_worst, group=diagnosis,fill=diagnosis)) +
+geom_density(alpha=0.5) +
+scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw()
+
+cp <- ggplot(df, aes(x=concave.points_worst, group=diagnosis,fill=diagnosis)) +
+geom_density(alpha=0.5) +
+scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw()
+
+ggarrange(cm, pw, cw, cp,
+          labels = c("A", "B", "C", "D"),
+          ncol = 2 , nrow = 2,
+          common.legend = T,
+          legend = "bottom")
+```
+
+```{r}
+
+mdf <- data[data$diagnosis == 1, ] # group of Malignant tumor
+bdf <- data[data$diagnosis == 0, ] # group of Benign tumor
+
+t.test(mdf$perimeter_worst,bdf$perimeter_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+t.test(mdf$concavity_worst,bdf$concavity_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+t.test(mdf$compactness_mean,bdf$compactness_mean, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+t.test(mdf$concave.points_worst,bdf$concave.points_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+
+```
+
+
 
 # Linear Model
 
