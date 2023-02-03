@@ -19,6 +19,7 @@ library(reshape2) # for melt function
 library(gridExtra) # to arrange plots in a grid 
 library(factoextra) # for PCA
 library(ggpubr)
+library(ggridges)
 library(corrplot) # for correlation between variables and PCA
 ```
 
@@ -154,15 +155,22 @@ plots <- lapply(1:length(features_mean), function(x) {
                               fill = as.factor(data$diagnosis))) +
     geom_histogram(binwidth = (max(data[,features_mean[x]]) - min(data[,features_mean[x]]))/50, 
                   alpha = 0.5, aes(color = as.factor(data$diagnosis))) +
-    scale_fill_manual(values = c("green", "red")) +
-    scale_color_manual(values = c("green", "red")) +
+    scale_fill_manual(values = c("#0468BF", "#D9A23D")) +
+    scale_color_manual(values = c("#0468BF", "#D9A23D")) +
     ggtitle(features_mean[x]) +
+    theme_bw() + 
     theme(plot.title = element_text(hjust = 0.5)) +
     labs(fill = "Diagnosis", color = "Diagnosis")
   return(g)
 })
 
-grid.arrange(grobs = plots, ncol = 2, widths = c(60, 60), height = 60)
+ggarrange(plotlist = plots,
+          ncol = 3 , nrow = 2,
+          common.legend = T,
+          legend = "bottom")
+
+
+#grid.arrange(grobs = plots, ncol = 2, widths = c(60, 60), height = 60)
 ```
 
 From the heatmap we analyse the features against the response variable diagnosis,
@@ -274,25 +282,30 @@ significantly different between healthy (benign) and diseased patients (malignan
 A t-test assigns a “t” test statistic value to each feature. A good feature, 
 represented by little to no overlap of the distributions and a large difference in means, would have a high “t” value.
 
-# TBD do the normality test
-
+first we divide the dataset
 ```{r}
-cm <- ggplot(df, aes(x=compactness_mean, group=diagnosis,fill=diagnosis)) +
+mdf <- data[data$diagnosis == 1, ] # group of Malignant tumor
+bdf <- data[data$diagnosis == 0, ] # group of Benign tumor
+```
+
+```
+```{r}
+cm <- ggplot(data_fs, aes(x=compactness_mean, group=diagnosis,fill=factor(diagnosis))) +
 geom_density(alpha=0.5) +
 scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
 theme_bw()
 
-pw <- ggplot(df, aes(x=perimeter_worst, group=diagnosis,fill=diagnosis)) +
+pw <- ggplot(data_fs, aes(x=perimeter_worst, group=diagnosis,fill=factor(diagnosis))) +
 geom_density(alpha=0.5) +
 scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
 theme_bw()
 
-cw <- ggplot(df, aes(x=concavity_worst, group=diagnosis,fill=diagnosis)) +
+cw <- ggplot(data_fs, aes(x=concavity_worst, group=diagnosis,fill=factor(diagnosis))) +
 geom_density(alpha=0.5) +
 scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
 theme_bw()
 
-cp <- ggplot(df, aes(x=concave.points_worst, group=diagnosis,fill=diagnosis)) +
+cp <- ggplot(data_fs, aes(x=concave.points_worst, group=diagnosis,fill=factor(diagnosis))) +
 geom_density(alpha=0.5) +
 scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
 theme_bw()
@@ -306,8 +319,7 @@ ggarrange(cm, pw, cw, cp,
 
 ```{r}
 
-mdf <- data[data$diagnosis == 1, ] # group of Malignant tumor
-bdf <- data[data$diagnosis == 0, ] # group of Benign tumor
+
 
 t.test(mdf$perimeter_worst,bdf$perimeter_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
 t.test(mdf$concavity_worst,bdf$concavity_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
