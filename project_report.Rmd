@@ -328,7 +328,8 @@ t.test(mdf$concave.points_worst,bdf$concave.points_worst, alternative="two.sided
 
 ```
 
-
+from the t value we can say that the better feature which helps us to distinguish
+malignant and benign is the concave.point_worst with a t value of 29
 
 # Linear Model
 
