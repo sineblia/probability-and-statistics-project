@@ -158,7 +158,7 @@ It is possible to verify how the frequency of benign tumors is much higher than 
 The values of the response diagnostic variable are converted to a numerical basis to enable a correlation study: Malignant == 1, Benign == 0.
 
 ```{r}
-data$diagnosis <- as.numeric(data$diagnosis == "M")
+# data$diagnosis <- as.numeric(data$diagnosis == "M")
 
 str(data)
 ```
@@ -168,14 +168,28 @@ str(data)
 A correlation map with a heatmap is generated.
 
 ```{r}
-# Calculate the correlation matrix
-corr_matrix <- cor(data)
+feature_data_matrix <- data %>% select(-diagnosis)
+# Calculate the correlation matrix among features
+corr_matrix <- cor(feature_data_matrix)
+
+# Calculate the correlation p-value matrix: if p-value is smaller than 0.05, the feature correlation is statistically relavant
+p_value_matrix <- matrix(NA, nrow = ncol(feature_data_matrix), ncol = ncol(feature_data_matrix) )
+
+for (i in 1:ncol(feature_data_matrix)) {
+  for (j in 1:ncol(feature_data_matrix)) {
+    if (i != j) {
+      cor_test <- cor.test(feature_data_matrix[,i], feature_data_matrix[,j], conf.level = 0.95)
+      p_value_matrix[i,j] <- ifelse(is.na(cor_test$p.value), '', ifelse(cor_test$p.value<0.05, 'S', 'N'))
+    }
+  }
+}
 
 # Melt the correlation matrix into a data frame
 melted_matrix <- melt(corr_matrix)
+p_melted_matrix <- melt(p_value_matrix)
 
 # Add the correlation coefficient as a label to each tile
-melted_matrix$label <- round(melted_matrix$value, 2)
+melted_matrix$label <- paste0(round(melted_matrix$value, 2), paste0('-', p_melted_matrix$value))
 
 # Plot the heatmap using ggplot2
 ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) + 
