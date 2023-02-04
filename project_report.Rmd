@@ -158,7 +158,7 @@ It is possible to verify how the frequency of benign tumors is much higher than 
 The values of the response diagnostic variable are converted to a numerical basis to enable a correlation study: Malignant == 1, Benign == 0.
 
 ```{r}
-# data$diagnosis <- as.numeric(data$diagnosis == "M")
+data$diagnosis <- as.numeric(data$diagnosis == "M")
 
 str(data)
 ```
