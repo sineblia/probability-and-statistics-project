@@ -135,6 +135,12 @@ colnames(data)
 
 # Descriptive Statistical Analysis
 
+The descriptive statistical analysis section aims to explore the properties and relationships among the different variables in the dataset. 
+This section will include an analysis of the frequency of cancer diagnoses (malignant or benign), as well as an analysis of the relationship 
+between diagnoses and cancer cell attributes. The distribution of attributes and the relationships between them will also be screened, providing 
+an overview of the fundamental properties of the dataset. This section will form the basis for the subsequent analysis of the relationships between 
+the variables and their importance in breast cancer classification.
+
 ## Benignant or Malignant diagnosis
 
 A check is made on the frequency of the two types of breast cancer diagnosis, benign or malignant.
@@ -147,9 +153,9 @@ theme_bw() +
   labs(x = "Diagnosis", y = "Frequency", title = "Frequency of Cancer Stages")
 ```
 
-Benignant cancers are way more than malignant.
+It is possible to verify how the frequency of benign tumors is much higher than malignant ones.
 
-Converting the diagnosis values in numeric. Malignant == 1, Benign == 0.
+The values of the response diagnostic variable are converted to a numerical basis to enable a correlation study: Malignant == 1, Benign == 0.
 
 ```{r}
 data$diagnosis <- as.numeric(data$diagnosis == "M")
@@ -157,10 +163,9 @@ data$diagnosis <- as.numeric(data$diagnosis == "M")
 str(data)
 ```
 
-
 ## Correlation map
 
-Let's see the correlation map with a heatmap.
+A correlation map with a heatmap is generated.
 
 ```{r}
 # Calculate the correlation matrix
@@ -183,8 +188,13 @@ ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) +
   ggtitle("Correlation Map")
 ```
 
+It is already possible to find which attributes have a higher correlation with the response variable and 
+which, on the other hand, might be discarded by virtue of this criterion.
 
 ## Features related to diagnosis
+
+Comparison histograms between features and the distribution of malignant or benign tumor diagnosis are generated. 
+These can be conveyed in order to make assertions about their distributions and significance.
 
 ```{r}
 features_mean <- names(data)[2:11]
@@ -212,26 +222,28 @@ ggarrange(plotlist = plots,
 #grid.arrange(grobs = plots, ncol = 2, widths = c(60, 60), height = 60)
 ```
 
-From the heatmap we analyse the features against the response variable diagnosis,
+Taking into consideration the previous heatmap, we analyze the features against the response variable diagnosis
 and we can see the most correlated are those with a value higher than 0.6.
-So we can discard: 
-- all the variables "*_se"
-- texture_*
-- smoothness_*
-- symmerty_*
-- fractal_dimension_*
+Mean values of texture, smoothness, symmetry or fractual dimension does not show a 
+particular preference of one diagnosis over the other. 
 
-on the remains we can conduct more in-depth analysis
+So it is possible to discard: 
 
-This code plots histograms of 10 features of a dataset with a binary diagnosis outcome. 
-The histograms are stacked and show the distribution of each feature for each diagnosis type (red for "M" and green for "B"). 
-The histograms are plotted in a 5x2 grid, with each feature in a separate plot and labeled with the feature name. 
-The code uses ggplot2 library in R for plotting and gridExtra library for arranging the plots in a grid.
-The resulting plot is a comparison of the distributions of each feature between the two diagnosis groups.
+- all the variables "*_se";
+- texture_*;
+- smoothness_*;
+- symmerty_*;
+- fractal_dimension_*.
 
-Mean values of texture, smoothness, symmetry or fractual dimension does not show a particular preference of one diagnosis over the other. 
+On the remaining features, a more in-depth analysis can be conducted.
 
 # Inferential Statistics
+
+The inferential statistical analysis section focuses on using statistical methods to make inferences about the properties of 
+populations based on the data in the dataset. This section aims to identify relationships between variables and determine the 
+importance of individual variables in breast cancer classification. Hypothesis testing will be used to confirm or reject relationships 
+between variables. This section will provide a deeper understanding of the properties of the dataset and their relationship to breast cancer diagnosis.
+Finally, regression techniques will be used to determine the relationship between attributes and diagnoses and to identify the most important attributes for tumor classification. 
 
 ## Covariance and Correlation
 
@@ -275,6 +287,7 @@ We keep concavity_worst and compactness_mean whose have the higher correlation
 with the diagnosis (0.659,0.696)
 
 as a summary we plot the correlation matrix of selected features
+
 ```{r}
 cor(data[c("perimeter_worst","concavity_worst","compactness_mean","concave.points_worst")])
 
