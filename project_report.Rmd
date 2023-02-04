@@ -168,7 +168,7 @@ str(data)
 A correlation map with a heatmap is generated.
 
 ```{r}
-feature_data_matrix <- data %>% select(-diagnosis)
+feature_data_matrix <- data #%>% select(-diagnosis)
 # Calculate the correlation matrix among features
 corr_matrix <- cor(feature_data_matrix)
 
