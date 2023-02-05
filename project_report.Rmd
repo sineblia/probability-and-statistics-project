@@ -205,13 +205,98 @@ ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) +
 It is already possible to find which attributes have a higher correlation with the response variable and 
 which, on the other hand, might be discarded by virtue of this criterion.
 
+## Contingecy Tables & Chi-sq Test
+
+Due to the fact that the response variable "diagnosis" it's a categorial one, we can't use
+correlation value to analyse the dipendency over the explanatory variables.
+
+We need to create contingency tables and test the indipendence of the variable 
+using the Chi-squared test
+
+H0: The two variables are independent.
+H1: The two variables relate to each other.
+
+we will keep only the variables which are dependent to the response. Furthermore 
+as we need to find which variable is more dependent than the other we create a list
+containing all the normalised chi-squared value
+
+```{r}
+# function for plotting a dataframe containing variables dependencies with chi-squared values
+
+dependency_list <- function(df) { 
+    features_mean <- names(df)[2:11]
+    features_se <- names(df)[12:21]
+    features_worst <- names(df)[22:31]
+
+    chivaluesN <- c(1)
+    indipendentV <- c(FALSE)
+
+    for (x in features_mean) {
+        con <- table(cut(df[,x],breaks = 7),df$diagnosis)
+        indipendent <- chisq.test(con)$p.value > 0.05
+        chivalueN <- round(chisq.test(con)$statistic / length(df$diagnosis),digits = 4)
+        indipendentV <- append(indipendentV, indipendent)
+        chivaluesN <- append(chivaluesN, chivalueN)
+    }
+
+    for (x in features_se) {
+        con <- table(cut(df[,x],breaks = 3),df$diagnosis)
+        indipendent <- chisq.test(con)$p.value > 0.05
+        chivalueN <- round(chisq.test(con)$statistic / length(df$diagnosis),digits = 4)
+        indipendentV <- append(indipendentV, indipendent)
+        chivaluesN <- append(chivaluesN, chivalueN)
+    }
+
+    for (x in features_worst) {
+        con <- table(cut(df[,x],breaks = 7),df$diagnosis)
+        indipendent <- chisq.test(con)$p.value > 0.05
+        chivalueN <- round(chisq.test(con)$statistic / length(df$diagnosis),digits = 4)
+        indipendentV <- append(indipendentV, indipendent)
+        chivaluesN <- append(chivaluesN, chivalueN)
+    }
+
+    features <- names(df)[1:31]
+    dv <- data.frame(features,chivaluesN,indipendentV)
+
+    return(dv)
+}
+
+dependency_v <- dependency_list(data)
+dependency_v <- dependency_v[dependency_v$features != "diagnosis",]
+```
+
+we discard all the values which are indipendente so all the TRUE, which correspond with a p-value > 0.05
+
+```{r}
+dependency_v <- dependency_v[dependency_v$indipendentV == "FALSE",]
+```
+
+of the remains we select those with a chi-squared normalised values > 0.25
+
+```{r}
+dependency_v <- dependency_v[dependency_v$chivaluesN > 0.25,]
+dependency_v
+```
+
+So it is possible to discard: 
+
+- all the variables "*_se";
+- texture_*;
+- smoothness_*;
+- symmerty_*;
+- fractal_dimension_*.
+
+On the remaining features, a more in-depth analysis can be conducted.
+
 ## Features related to diagnosis
 
 Comparison histograms between features and the distribution of malignant or benign tumor diagnosis are generated. 
 These can be conveyed in order to make assertions about their distributions and significance.
 
 ```{r}
-features_mean <- names(data)[2:11]
+#features_mean <- names(data)[2:11]
+
+features_mean <- dependency_v$features
 
 plots <- lapply(1:length(features_mean), function(x) {
   g <- ggplot(data, aes_string(x = features_mean[x], 
@@ -236,20 +321,7 @@ ggarrange(plotlist = plots,
 #grid.arrange(grobs = plots, ncol = 2, widths = c(60, 60), height = 60)
 ```
 
-Taking into consideration the previous heatmap, we analyze the features against the response variable diagnosis
-and we can see the most correlated are those with a value higher than 0.6.
-Mean values of texture, smoothness, symmetry or fractual dimension does not show a 
-particular preference of one diagnosis over the other. 
 
-So it is possible to discard: 
-
-- all the variables "*_se";
-- texture_*;
-- smoothness_*;
-- symmerty_*;
-- fractal_dimension_*.
-
-On the remaining features, a more in-depth analysis can be conducted.
 
 # Inferential Statistics
 
@@ -276,8 +348,7 @@ pairs(data[c("radius_mean","perimeter_mean","area_mean","radius_worst",
 
 from the plot and the correlation values we can see a very strong correlation between all the features
 in this table so we can drop them all except for one. We select the feature which has the higher correlation with the response variable diagnosis
-so we select the perimeter_worst with a value of 0.783.
-There is also a strong correlation between the radius_worst, perimeter_worst and area_worst.
+so we select the perimeter_worst with a value of 0.6991
 
 we now test the last remained variables
 
@@ -294,45 +365,19 @@ pairs(data[c("concavity_mean","compactness_mean","concave.points_mean",
 
 from the analysis and the plot we can see that concave.point_worst and concave.points_mean
 are strongly correlated so we keep only concave.point_worst which has the higher
-correlation with diagnosis.
+correlation with diagnosis (0.6833).
 Same goes for concavity and compacteness mean with they respective worst have a correlation
-value less than 0.9 but still strongly correlated.
-We keep concavity_worst and compactness_mean whose have the higher correlation
-with the diagnosis (0.659,0.696)
+value less than 0.6 but still strongly correlated.
+We keep concavity_mean and compactness_mean whose have the higher correlation
+with the diagnosis (0.5640,0.3666)
 
 as a summary we plot the correlation matrix of selected features
 
 ```{r}
-cor(data[c("perimeter_worst","concavity_worst","compactness_mean","concave.points_worst")])
+cor(data[c("perimeter_worst","concavity_mean","compactness_mean","concave.points_worst")])
 
-pairs(data[c("perimeter_worst","concavity_worst","compactness_mean","concave.points_worst")])
+pairs(data[c("perimeter_worst","concavity_mean","compactness_mean","concave.points_worst")])
 ```
-
-## Chi-sq Test
-
-for further analysis we want to test the indipendence of the variable 
-where the correlation values is in the range of 0.8-0.9
-in order to do this we use the Chi-squared test
-
-H0: The two variables are independent.
-H1: The two variables relate to each other.
-
-```{r}
-chisq.test(data$concavity_worst,data$compactness_mean, correct = FALSE)
-```
-
-p value is > 0.05 so we accept the null hypotesis, the two variable are indipendent
-
-```{r}
-chisq.test(data$concave.points_worst,data$perimeter_worst, correct = FALSE)
-```
-p value is > 0.05 so we accept the null hypotesis, the two variable are indipendent
-```{r}
-chisq.test(data$concave.points_worst,data$concavity_worst, correct = FALSE)
-```
-p value is < 0.05 so we reject the null hypotesis, the two variable are dependant
-
-even though those last two variable are correlated, we decide not to drop any more feature
 
 ```{r}
 
