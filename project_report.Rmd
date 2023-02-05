@@ -258,33 +258,10 @@ feature_data_matrix <- subset(data, select = dependency_v$features) #%>% select(
 # Calculate the correlation matrix among features
 corr_matrix <- cor(feature_data_matrix)
 
-# Calculate the correlation p-value matrix: if p-value is smaller than 0.05, the feature correlation is statistically relavant
-p_value_matrix <- matrix(NA, nrow = ncol(feature_data_matrix), ncol = ncol(feature_data_matrix) )
+testRes = cor.mtest(feature_data_matrix, conf.level = 0.95)
 
-for (i in 1:ncol(feature_data_matrix)) {
-  for (j in 1:ncol(feature_data_matrix)) {
-    if (i != j) {
-      cor_test <- cor.test(feature_data_matrix[,i], feature_data_matrix[,j], conf.level = 0.95)
-      p_value_matrix[i,j] <- ifelse(is.na(cor_test$p.value), '', ifelse(cor_test$p.value<0.05, 'S', 'N'))
-    }
-  }
-}
-
-# Melt the correlation matrix into a data frame
-melted_matrix <- melt(corr_matrix)
-p_melted_matrix <- melt(p_value_matrix)
-
-# Add the correlation coefficient as a label to each tile
-melted_matrix$label <- paste0(round(melted_matrix$value, 2), paste0('-', p_melted_matrix$value))
-
-ggplot(data = melted_matrix, aes(x = Var1, y = Var2, fill = value)) + 
-  geom_tile(color = "white") +
-  geom_text(aes(label = label), color = "black", size = 3) + 
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0,
-    limit = c(-1, 1), name = "Correlation") + 
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-  ggtitle("Correlation Map")
+corrplot(corr_matrix, p.mat = testRes$p, addCoef.col ='white',
+tl.cex = 0.5, tl.srt = 45, number.cex = 0.5)
 ```
 
 It is already possible to find which attributes have a higher correlation with the response variable and 
@@ -319,8 +296,6 @@ ggarrange(plotlist = plots,
           common.legend = T,
           legend = "bottom")
 
-
-#grid.arrange(grobs = plots, ncol = 2, widths = c(60, 60), height = 60)
 ```
 
 
@@ -383,7 +358,7 @@ pairs(data[c("perimeter_worst","concavity_mean","compactness_mean","concave.poin
 
 ```{r}
 
-data_fs <- data[c("perimeter_worst","concavity_worst","compactness_mean","concave.points_worst","perimeter_worst","diagnosis")]
+data_fs <- data[c("perimeter_worst","concavity_mean","compactness_mean","concave.points_worst","diagnosis")]
 
 ```
 
@@ -413,7 +388,7 @@ geom_density(alpha=0.5) +
 scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
 theme_bw()
 
-cw <- ggplot(data_fs, aes(x=concavity_worst, group=diagnosis,fill=factor(diagnosis))) +
+cw <- ggplot(data_fs, aes(x=concavity_mean, group=diagnosis,fill=factor(diagnosis))) +
 geom_density(alpha=0.5) +
 scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
 theme_bw()
@@ -435,7 +410,7 @@ ggarrange(cm, pw, cw, cp,
 
 
 t.test(mdf$perimeter_worst,bdf$perimeter_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
-t.test(mdf$concavity_worst,bdf$concavity_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+t.test(mdf$concavity_mean,bdf$concavity_mean, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
 t.test(mdf$compactness_mean,bdf$compactness_mean, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
 t.test(mdf$concave.points_worst,bdf$concave.points_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
 
