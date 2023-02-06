@@ -75,6 +75,7 @@ Some information about the features:
 2) diagnosis (response): the diagnosis of breast tissues (M = malignant, B = benign);
 
 From 3 to 32 ten real-valued features are computed for each cell nucleus:
+
 a) radius (mean of distances from center to points on the perimeter);
 b) texture (standard deviation of gray-scale values);
 c) perimeter;
@@ -84,7 +85,7 @@ f) compactness (perimeter^2 / area - 1.0);
 g) concavity (severity of concave portions of the contour);
 h) concave points (number of concave portions of the contour);
 i) symmetry;
-j) fractal dimension ("coastline approximation" - 1);
+l) fractal dimension ("coastline approximation" - 1);
 
 For more in-depth insight, the summary of all attributes and the head of the dataset are presented.
 
@@ -151,17 +152,17 @@ It is possible to verify how the frequency of benign tumors is much higher than 
 ## Contingecy Tables & Chi-sq Test
 
 Due to the fact that the response variable "diagnosis" it's a categorial one, we can't use
-correlation value to analyse the dipendency over the explanatory variables.
+correlation value to analyze the dipendency over the explanatory variables.
 
-We need to create contingency tables and test the indipendence of the variable 
-using the Chi-squared test
+It is needed to create contingency tables and test the indipendence of the variable 
+using the Chi-squared test:
 
 H0: The two variables are independent.
 H1: The two variables relate to each other.
 
-we will keep only the variables which are dependent to the response. Furthermore 
+We will only keep the variables which are dependent to the response. Furthermore 
 as we need to find which variable is more dependent than the other we create a list
-containing all the normalised chi-squared value
+containing all the normalised chi-squared value.
 
 ```{r}
 # function for plotting a dataframe containing variables dependencies with chi-squared values
@@ -208,20 +209,20 @@ dependency_v <- dependency_list(data)
 dependency_v <- dependency_v[dependency_v$features != "diagnosis",]
 ```
 
-we discard all the values which are indipendente so all the TRUE, which correspond with a p-value > 0.05
+We discard all the values which are indipendente so all the TRUE, which correspond with a p-value > 0.05.
 
 ```{r}
 dependency_v <- dependency_v[dependency_v$indipendentV == "FALSE",]
 ```
 
-of the remains we select those with a chi-squared normalised values > 0.25
+On the remaining ones, we select those with a chi-squared normalised values > 0.25.
 
 ```{r}
 dependency_v <- dependency_v[dependency_v$chivaluesN > 0.25,]
 dependency_v
 ```
 
-So it is possible to discard: 
+It is possible to discard: 
 
 - all the variables "*_se";
 - texture_*;
@@ -229,11 +230,11 @@ So it is possible to discard:
 - symmerty_*;
 - fractal_dimension_*.
 
-On the remaining features, a more in-depth analysis can be conducted
+On the remaining features, a more in-depth analysis can be conducted.
 
 ## A graphical way to see the featueres related to diagnosis
 
-In the previous paragraph we saw which features related to the target variable diagnosis.
+In the previous paragraph we saw which features are related to the target variable diagnosis.
 In this paragraph we attempt to explain it by a graphical way: comparison histograms between features and the distribution of malignant or benign tumor diagnosis are generated. 
 These can be conveyed in order to make assertions about their distributions and significance.
 
@@ -263,10 +264,9 @@ ggarrange(plotlist = plots,
 
 ```
 
-
 ## Correlation map
 
-A correlation map with a heatmap is generated between the variables selected
+A correlation map with a heatmap is generated between the selected variables.
 
 ```{r}
 
@@ -281,11 +281,11 @@ tl.cex = 0.5, tl.srt = 45, number.cex = 0.5)
 
 ```
 
-It is possible to use the correlation among features to reduce their number, encreasing the explanability of the multilinear regression model we will face soon.
+It is possible to verify the correlations among features to reduce their number, encreasing the explanability of the multilinear regression model we will face soon.
 
 ## Covariance and Correlation
 
-followe the scatter plot and the analysis above we can explore more the variables left.
+Following the scatter plot and the analysis above we can explore more the other variables.
 
 ```{r}
 first_features <- data[c("radius_mean","perimeter_mean","area_mean","radius_worst",
@@ -328,10 +328,9 @@ corr_features_df <- corr_features_df %>% arrange(desc(correlation))
 corr_features_df
 ```
 
-from the plot and the correlation values we can see a very strong correlation between all the features in this table so we can drop them all except for one. 
-We select the feature which has the higher association with the response variable diagnosis so we select the perimeter_worst with a value of 0.6991
-we now test the last remained variables
-
+From the plot and the correlation values we can see a very strong correlation between all the features, so we can drop them all except for one. 
+We select the feature which has the higher association with the response variable diagnosis so we select the perimeter_worst with a value of 0.6991.
+We now test the last remaining variables.
 
 ```{r}
 remained_features <- data[c("concavity_mean","compactness_mean","concave.points_mean",
@@ -374,13 +373,13 @@ corr_features_df <- corr_features_df %>% arrange(desc(correlation))
 corr_features_df
 ```
 
-from the analysis and the plot we can see that concave.point_worst and concave.points_mean 
+From the analysis and the plot we can see that concave.point_worst and concave.points_mean 
 are strongly correlated so we keep only concave.point_worst which has the higher association with diagnosis (0.6833). 
 
 Same goes for concavity and compacteness mean with they respective worst have a correlation value less than 0.6 but still strongly correlated. 
-We keep concavity_mean and compactness_mean whose have the higher association with the diagnosis (0.5640,0.3666)
+We keep concavity_mean and compactness_mean whose have the higher association with the diagnosis (0.5640,0.3666).
 
-as a summary we plot the correlation matrix of selected features
+As a summary, we plot the correlation matrix of selected features.
 
 ```{r}
 cor(data[c("perimeter_worst","concavity_mean","compactness_mean","concave.points_worst")])
@@ -411,7 +410,8 @@ significantly different between healthy (benign) and diseased patients (malignan
 A t-test assigns a “t” test statistic value to each feature. A good feature, 
 represented by little to no overlap of the distributions and a large difference in means, would have a high “t” value.
 
-first we divide the dataset
+Firstly, we divide the dataset.
+
 ```{r}
 data$diagnosis <- ifelse(data$diagnosis=="M",1,0)
 
@@ -457,12 +457,12 @@ t.test(mdf$concave.points_worst,bdf$concave.points_worst, alternative="two.sided
 
 ```
 
-from the t value we can say that the better feature which helps us to distinguish
-malignant and benign is the concave.point_worst with a t value of 29.
+From the t value we can say that the better feature which helps us to distinguish
+malignant and benign is the **concave.point_worst** with a t value of 29.
 
 # Multiple Linear Regression Model
 
-We use the four selected features for the multiple linear regression model
+We use the four selected features to apply the multiple linear regression model.
 
 ```{r}
 reg_model <- lm(data$diagnosis ~ perimeter_worst
@@ -475,10 +475,9 @@ summary(reg_model)
 
 ```
 
-
 ## Regression Diagnostics
 
-Let we check if the residuals of our linear regression are normally distributed. 
+We check if the residuals of our linear regression are normally distributed. 
 
 ```{r}
 hist(resid(reg_model))
@@ -492,9 +491,10 @@ qqline(resid(reg_model))
 
 As we can see from the histogram and the qqplot, the distribution of the residuals seems almost normal.
 
-Let we see if the Shapiro–Wilk test confirms that.
-H0: there is no difference between the residuals distribution and a normal distribution
-H1: the two distribution are not equal
+To confirm that, a check with the Shapiro–Wilk test is conducted.
+
+H0: there is no difference between the residuals distribution and a normal distribution;
+H1: the two distribution are not equal.
 
 ```{r}
 shapiro.test(resid(reg_model))
