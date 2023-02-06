@@ -1,0 +1,508 @@
+---
+title: "Foundations of Probability and Statistics, Project"
+author: "Emiliano Capasso, Antonello Scarcella, Simone Bellavia"
+date: '2023-12-05'
+geometry: "left=2cm,right=2cm,top=0.5cm,bottom=1.5cm"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE,
+                      message=FALSE,
+                      tidy.opts=list(width.cutoff = 80),
+                      tidy = TRUE)
+library(tidyverse) # for tidyverse
+library(caret) # for createDataPartition
+library(performance) # for compare_performance
+library(ggplot2) # for plots
+library(reshape2) # for melt function
+library(gridExtra) # to arrange plots in a grid 
+library(factoextra) # for PCA
+library(ggpubr)
+library(ggridges)
+library(corrplot) # for correlation between variables and PCA
+library(psych) # for descriptive statistics
+```
+
+# Introduction to Analysis
+
+Breast cancer is one of the most prevalent forms of cancer in women worldwide. According to the World Health Organization, more than 1.7 million 
+new cases of breast cancer are diagnosed each year, making it the most common form of cancer among women. Early detection and proper classification 
+of the cancer are critical to ensure a positive prognosis and appropriate treatment. 
+
+The **Breast Cancer Wisconsin (Diagnostic) Data Set** provides information on the characteristics of cancer cells found in breast tissue and the 
+final diagnosis (malignant or benign). This dataset has been used as a benchmark for many classification algorithms and continues to be a benchmark 
+for researchers and developers of artificial intelligence systems in the field of medicine.
+
+This dataset will be used in this project for the analysis of breast cancer. To this end, the project consists of several sections: data exploration, 
+descriptive statistical analysis, feature selection with related testing part, and application of the linear model.
+
+This dataset will be used in this project for the analysis of breast cancer. To this end, the report consists of several sections: 
+
+- the first part of the project will be based on **Data Preparation and Cleaning.** We will check the correctness of the type of data available, the presence of missing values and outliers;
+
+- the second part will consist of **Descriptive Statistical Analysis.** Covariances and correlations between features will be checked to give us a better understanding of the nature of the data and its distribution;
+
+- the third part will be based on **Inferential Statistics.** Tests and hypothesis testing will be carried out in order to be able to make considerations about the diagnosis of benign or malignant tumor;
+
+- the fourth part will see the application of the **Linear Model.** The outputs will give more information about the data at hand.
+
+# Data Preparation and Cleaning
+
+## Importing data
+
+The dataset is imported from a CSV file provided by the UCI Repository.
+
+The only feature that identifies the type of diagnosis is represented by, precisely, *diagnosis*. Therefore, being a string, it is converted already as a factor from the import.
+
+```{r}
+# import data
+data <- read.csv("data.csv",
+                    header = TRUE,
+                    sep=",",
+                    stringsAsFactors = TRUE)
+```
+
+Several considerations can be made about the dataset. It consists of 33 features and 569 observations. Thanks to UCI, it is known
+that these features are computed from a digitized image of a fine needle aspirate (FNA) of a breast mass. A fine needle aspiration (FNA) is a type of biopsy. 
+It uses a very thin needle and syringe to remove a sample of cells, tissue or fluid from an abnormal area or lump in the body. The sample is then examined under a microscope. 
+FNA is also called fine needle aspiration biopsy, or fine needle biopsy. [1] 
+In this case, the features describe characteristics of the cell nuclei present in the image. A few of the images can be found at [Web Link](http://www.cs.wisc.edu/~street/images/).
+
+Some information about the features:
+
+1) id: id number;
+2) diagnosis (response): the diagnosis of breast tissues (M = malignant, B = benign);
+
+From 3 to 32 ten real-valued features are computed for each cell nucleus:
+
+a) radius (mean of distances from center to points on the perimeter);
+b) texture (standard deviation of gray-scale values);
+c) perimeter;
+d) area;
+e) smoothness (local variation in radius lengths);
+f) compactness (perimeter^2 / area - 1.0);
+g) concavity (severity of concave portions of the contour);
+h) concave points (number of concave portions of the contour);
+i) symmetry;
+l) fractal dimension ("coastline approximation" - 1);
+
+For more in-depth insight, the summary of all attributes and the head of the dataset are presented.
+
+```{r}
+# get summary of variables
+summary(data)
+```
+
+```{r}
+# getting the head of dataset
+head(data)
+```
+
+## Missing Values
+
+It is important to check that the available dataset does not contain missing or null values. For this reason, a spot check is performed.
+
+```{r}
+# check for missing values
+colSums(is.na(data))
+```
+
+There aren't missing values in the considered dataset, except for 32th feature 'X' that is full of NA. 
+For this reason, we remove the attribute completely, as having no relevant information is not useful for the analysis.
+
+```{r}
+data <- data %>% select(-X)
+```
+
+For the same reason, although it does not contain null values, the 'id' attribute is also removed.
+
+```{r}
+data <- data %>% select(-id)
+```
+
+A check is made on the effective removal of these attributes.
+
+```{r}
+colnames(data)
+```
+
+# Descriptive Statistical Analysis
+
+The descriptive statistical analysis section aims to explore the properties and relationships among the different variables in the dataset. 
+This section will include an analysis of the frequency of cancer diagnoses (malignant or benign), as well as an analysis of the relationship 
+between diagnoses and cancer cell attributes. The distribution of attributes and the relationships between them will also be screened, providing 
+an overview of the fundamental properties of the dataset. This section will form the basis for the subsequent analysis of the relationships between 
+the variables and their importance in breast cancer classification.
+
+## Benignant or Malignant diagnosis
+
+A check is made on the frequency of the two types of breast cancer diagnosis, benign or malignant.
+
+```{r}
+ggplot(data, aes(x = diagnosis)) + 
+  geom_bar(aes(y = (after_stat(count))/sum(after_stat(count)))) + 
+  scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw() +
+  labs(x = "Diagnosis", y = "Frequency", title = "Frequency of Cancer Stages")
+```
+
+It is possible to verify how the frequency of benign tumors is much higher than malignant ones.
+
+## Contingecy Tables & Chi-sq Test
+
+Due to the fact that the response variable "diagnosis" it's a categorial one, we can't use
+correlation value to analyze the dipendency over the explanatory variables.
+
+It is needed to create contingency tables and test the indipendence of the variable 
+using the Chi-squared test:
+
+H0: The two variables are independent.
+H1: The two variables relate to each other.
+
+We will only keep the variables which are dependent to the response. Furthermore 
+as we need to find which variable is more dependent than the other we create a list
+containing all the normalised chi-squared value.
+
+```{r}
+# function for plotting a dataframe containing variables dependencies with chi-squared values
+
+dependency_list <- function(df) { 
+    features_mean <- names(df)[2:11]
+    features_se <- names(df)[12:21]
+    features_worst <- names(df)[22:31]
+
+    chivaluesN <- c(1)
+    indipendentV <- c(FALSE)
+
+    for (x in features_mean) {
+        con <- table(cut(df[,x],breaks = 7),df$diagnosis)
+        indipendent <- chisq.test(con)$p.value > 0.05
+        chivalueN <- round(chisq.test(con)$statistic / length(df$diagnosis),digits = 4)
+        indipendentV <- append(indipendentV, indipendent)
+        chivaluesN <- append(chivaluesN, chivalueN)
+    }
+
+    for (x in features_se) {
+        con <- table(cut(df[,x],breaks = 3),df$diagnosis)
+        indipendent <- chisq.test(con)$p.value > 0.05
+        chivalueN <- round(chisq.test(con)$statistic / length(df$diagnosis),digits = 4)
+        indipendentV <- append(indipendentV, indipendent)
+        chivaluesN <- append(chivaluesN, chivalueN)
+    }
+
+    for (x in features_worst) {
+        con <- table(cut(df[,x],breaks = 7),df$diagnosis)
+        indipendent <- chisq.test(con)$p.value > 0.05
+        chivalueN <- round(chisq.test(con)$statistic / length(df$diagnosis),digits = 4)
+        indipendentV <- append(indipendentV, indipendent)
+        chivaluesN <- append(chivaluesN, chivalueN)
+    }
+
+    features <- names(df)[1:31]
+    dv <- data.frame(features,chivaluesN,indipendentV)
+
+    return(dv)
+}
+
+dependency_v <- dependency_list(data)
+dependency_v <- dependency_v[dependency_v$features != "diagnosis",]
+```
+
+We discard all the values which are indipendente so all the TRUE, which correspond with a p-value > 0.05.
+
+```{r}
+dependency_v <- dependency_v[dependency_v$indipendentV == "FALSE",]
+```
+
+On the remaining ones, we select those with a chi-squared normalised values > 0.25.
+
+```{r}
+dependency_v <- dependency_v[dependency_v$chivaluesN > 0.25,]
+dependency_v
+```
+
+It is possible to discard: 
+
+- all the variables "*_se";
+- texture_*;
+- smoothness_*;
+- symmerty_*;
+- fractal_dimension_*.
+
+On the remaining features, a more in-depth analysis can be conducted.
+
+## A graphical way to see the features related to diagnosis
+
+In the previous paragraph we saw which features are related to the target variable diagnosis.
+In this paragraph we attempt to explain it by a graphical way: comparison histograms between features and the distribution of malignant or benign tumor diagnosis are generated. 
+These can be conveyed in order to make assertions about their distributions and significance.
+
+```{r}
+#features_mean <- names(data)[2:11]
+
+features_mean <- dependency_v$features
+
+plots <- lapply(1:length(features_mean), function(x) {
+  g <- ggplot(data, aes_string(x = features_mean[x], 
+                              fill = as.factor(data$diagnosis))) +
+    geom_histogram(binwidth = (max(data[,features_mean[x]]) - min(data[,features_mean[x]]))/50, 
+                  alpha = 0.5, aes(color = as.factor(data$diagnosis))) +
+    scale_fill_manual(values = c("#0468BF", "#D9A23D")) +
+    scale_color_manual(values = c("#0468BF", "#D9A23D")) +
+    ggtitle(features_mean[x]) +
+    theme_bw() + 
+    theme(plot.title = element_text(hjust = 0.5)) +
+    labs(fill = "Diagnosis", color = "Diagnosis")
+  return(g)
+})
+
+ggarrange(plotlist = plots,
+          ncol = 3 , nrow = 2,
+          common.legend = T,
+          legend = "bottom")
+
+```
+
+## Correlation map
+
+A correlation map with a heatmap is generated between the selected variables.
+
+```{r}
+
+feature_data_matrix <- subset(data, select = dependency_v$features) #%>% select(-diagnosis)
+# Calculate the correlation matrix among features
+corr_matrix <- cor(feature_data_matrix)
+
+testRes = cor.mtest(feature_data_matrix, conf.level = 0.95)
+
+corrplot(corr_matrix, p.mat = testRes$p, addCoef.col ='white',
+tl.cex = 0.5, tl.srt = 45, number.cex = 0.5)
+
+```
+
+It is possible to verify the correlations among features to reduce their number, encreasing the explanability of the multilinear regression model we will face soon.
+
+## Covariance and Correlation
+
+Following the scatter plot and the analysis above we can explore more the other variables.
+
+```{r}
+first_features <- data[c("radius_mean","perimeter_mean","area_mean","radius_worst",
+"perimeter_worst","area_worst")]
+
+cols <- colnames(first_features)
+cols_combinations <- combn(cols, 2, FUN = list)
+
+plot_first_list <- lapply(cols_combinations, function(cols) {
+  x <- first_features[, cols[1]]
+  y <- first_features[, cols[2]]
+  ggplot(first_features, aes_string(x = cols[1], y = cols[2])) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    ggtitle(paste(cols[1], "vs", cols[2]))
+})
+
+
+ggarrange(plotlist = plot_first_list, ncol = 3, nrow = 2)
+
+```
+
+```{r}
+cols <- colnames(first_features)
+cols_combinations <- combn(cols, 2, FUN = list)
+
+first_corr_list <- lapply(cols_combinations, function(cols){
+                    x <- first_features[, cols[1]]
+                    y <- first_features[, cols[2]]
+                    corr <- cor(x,y)
+                    return(c(cols[1], cols[2], corr))
+                  }
+
+)
+
+corr_features_df <- as.data.frame(do.call(rbind, first_corr_list))
+colnames(corr_features_df) <- c("V1", "V2", "correlation")
+
+corr_features_df <- corr_features_df %>% arrange(desc(correlation))
+corr_features_df
+```
+
+From the plot and the correlation values we can see a very strong correlation between all the features, so we can drop them all except for one. 
+We select the feature which has the higher association with the response variable diagnosis so we select the perimeter_worst with a value of 0.6991.
+We now test the last remaining variables.
+
+```{r}
+remained_features <- data[c("concavity_mean","compactness_mean","concave.points_mean",
+"concavity_worst","compactness_worst","concave.points_worst")]
+
+cols <- colnames(remained_features)
+cols_combinations <- combn(cols, 2, FUN = list)
+
+plot_remained_list <- lapply(cols_combinations, function(cols) {
+  x <- remained_features[, cols[1]]
+  y <- remained_features[, cols[2]]
+  ggplot(remained_features, aes_string(x = cols[1], y = cols[2])) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    ggtitle(paste(cols[1], "vs", cols[2]))
+})
+
+
+ggarrange(plotlist = plot_remained_list, ncol = 3, nrow = 2)
+
+```
+
+```{r}
+cols <- colnames(remained_features)
+cols_combinations <- combn(cols, 2, FUN = list)
+
+remained_corr_list <- lapply(cols_combinations, function(cols){
+                    x <- remained_features[, cols[1]]
+                    y <- remained_features[, cols[2]]
+                    corr <- cor(x,y)
+                    return(c(cols[1], cols[2], corr))
+                  }
+
+)
+
+corr_features_df <- as.data.frame(do.call(rbind, remained_corr_list))
+colnames(corr_features_df) <- c("V1", "V2", "correlation")
+
+corr_features_df <- corr_features_df %>% arrange(desc(correlation))
+corr_features_df
+```
+
+From the analysis and the plot we can see that concave.point_worst and concave.points_mean 
+are strongly correlated so we keep only concave.point_worst which has the higher association with diagnosis (0.6833). 
+
+Same goes for concavity and compacteness mean with they respective worst have a correlation value less than 0.6 but still strongly correlated. 
+We keep concavity_mean and compactness_mean whose have the higher association with the diagnosis (0.5640,0.3666).
+
+As a summary, we plot the correlation matrix of selected features.
+
+```{r}
+cor(data[c("perimeter_worst","concavity_mean","compactness_mean","concave.points_worst")])
+
+pairs(data[c("perimeter_worst","concavity_mean","compactness_mean","concave.points_worst")])
+```
+
+```{r}
+
+data_fs <- data[c("perimeter_worst","concavity_mean","compactness_mean","concave.points_worst","diagnosis")]
+
+```
+
+
+# Inferential Statistics
+
+The inferential statistical analysis section focuses on using statistical methods to make inferences about the properties of 
+populations based on the data in the dataset. This section aims to identify relationships between variables and determine the 
+importance of individual variables in breast cancer classification. Hypothesis testing will be used to confirm or reject relationships 
+between variables. This section will provide a deeper understanding of the properties of the dataset and their relationship to breast cancer diagnosis.
+Finally, regression techniques will be used to determine the relationship between attributes and diagnoses and to identify the most important attributes for tumor classification. 
+
+## Test
+
+We want to determine whether the features selected are 
+significantly different between healthy (benign) and diseased patients (malignant).
+
+A t-test assigns a “t” test statistic value to each feature. A good feature, 
+represented by little to no overlap of the distributions and a large difference in means, would have a high “t” value.
+
+Firstly, we divide the dataset.
+
+```{r}
+data$diagnosis <- ifelse(data$diagnosis=="M",1,0)
+
+mdf <- data[data$diagnosis == 1, ] # group of Malignant tumor
+bdf <- data[data$diagnosis == 0, ] # group of Benign tumor
+```
+
+```
+```{r}
+cm <- ggplot(data_fs, aes(x=compactness_mean, group=diagnosis,fill=factor(diagnosis))) +
+geom_density(alpha=0.5) +
+scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw()
+
+pw <- ggplot(data_fs, aes(x=perimeter_worst, group=diagnosis,fill=factor(diagnosis))) +
+geom_density(alpha=0.5) +
+scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw()
+
+cw <- ggplot(data_fs, aes(x=concavity_mean, group=diagnosis,fill=factor(diagnosis))) +
+geom_density(alpha=0.5) +
+scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw()
+
+cp <- ggplot(data_fs, aes(x=concave.points_worst, group=diagnosis,fill=factor(diagnosis))) +
+geom_density(alpha=0.5) +
+scale_fill_manual(values = c("#0468BF","#D9A23D")) + 
+theme_bw()
+
+ggarrange(cm, pw, cw, cp,
+          labels = c("A", "B", "C", "D"),
+          ncol = 2 , nrow = 2,
+          common.legend = T,
+          legend = "bottom")
+```
+
+```{r}
+
+t.test(mdf$perimeter_worst,bdf$perimeter_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+t.test(mdf$concavity_mean,bdf$concavity_mean, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+t.test(mdf$compactness_mean,bdf$compactness_mean, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+t.test(mdf$concave.points_worst,bdf$concave.points_worst, alternative="two.sided", var.equal=FALSE,conf.level=0.95)
+
+```
+
+From the t value we can say that the better feature which helps us to distinguish
+malignant and benign is the **concave.point_worst** with a t value of 29.
+
+# Multiple Linear Regression Model
+
+We use the four selected features to apply the multiple linear regression model.
+
+```{r}
+reg_model <- lm(data$diagnosis ~ perimeter_worst
+                                + concavity_mean
+                                + compactness_mean
+                                + concave.points_worst
+                                , data=data )
+
+summary(reg_model)
+
+```
+
+## Regression Diagnostics
+
+We check if the residuals of our linear regression are normally distributed. 
+
+```{r}
+hist(resid(reg_model))
+
+```
+
+```{r}
+qqnorm(resid(reg_model))
+qqline(resid(reg_model))
+```
+
+As we can see from the histogram and the qqplot, the distribution of the residuals seems almost normal.
+
+To confirm that, a check with the Shapiro–Wilk test is conducted.
+
+- H0: there is no difference between the residuals distribution and a normal distribution;
+- H1: the two distribution are not equal.
+
+```{r}
+shapiro.test(resid(reg_model))
+```
+
+Although the test returns a very high coefficient, having a p-value < 0.05 we can't accept the null Hypothesis and have to conclude
+that the result is not statistically relevant.
+
+# Bibliography
+
+[1] https://cancer.ca/en/treatments/tests-and-procedures/fine-needle-aspiration-fna
