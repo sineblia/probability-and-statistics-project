@@ -299,8 +299,8 @@ plot_first_list <- lapply(cols_combinations, function(cols) {
   y <- first_features[, cols[2]]
   ggplot(first_features, aes_string(x = cols[1], y = cols[2])) +
     geom_point() +
-    geom_smooth(method = "lm", se = FALSE) +
-    ggtitle(paste(cols[1], "vs", cols[2]))
+    geom_smooth(method = "lm", se = FALSE) 
+    # +  ggtitle(paste(cols[1], "vs", cols[2]))
 })
 
 
@@ -344,8 +344,8 @@ plot_remained_list <- lapply(cols_combinations, function(cols) {
   y <- remained_features[, cols[2]]
   ggplot(remained_features, aes_string(x = cols[1], y = cols[2])) +
     geom_point() +
-    geom_smooth(method = "lm", se = FALSE) +
-    ggtitle(paste(cols[1], "vs", cols[2]))
+    geom_smooth(method = "lm", se = FALSE) 
+    # +     ggtitle(paste(cols[1], "vs", cols[2]))
 })
 
 
