@@ -232,7 +232,7 @@ It is possible to discard:
 
 On the remaining features, a more in-depth analysis can be conducted.
 
-## A graphical way to see the featueres related to diagnosis
+## A graphical way to see the features related to diagnosis
 
 In the previous paragraph we saw which features are related to the target variable diagnosis.
 In this paragraph we attempt to explain it by a graphical way: comparison histograms between features and the distribution of malignant or benign tumor diagnosis are generated. 
