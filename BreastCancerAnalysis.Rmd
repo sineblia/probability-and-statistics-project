@@ -151,18 +151,18 @@ It is possible to verify how the frequency of benign tumors is much higher than 
 
 ## Contingecy Tables & Chi-sq Test
 
-Due to the fact that the response variable "diagnosis" it's a categorial one, we can't use
-correlation value to analyze the dipendency over the explanatory variables.
+Since the response variable "diagnosis" it's a categorial one, we can't use
+correlation value to analyze the dependency over the explanatory variables.
 
-It is needed to create contingency tables and test the indipendence of the variable 
+It is needed to create contingency tables and test the independence of the variable 
 using the Chi-squared test:
 
 H0: The two variables are independent.
 H1: The two variables relate to each other.
 
-We will only keep the variables which are dependent to the response. Furthermore 
+We will only keep the variables that are dependent on the response. Furthermore 
 as we need to find which variable is more dependent than the other we create a list
-containing all the normalised chi-squared value.
+containing all the normalized chi-squared values.
 
 ```{r}
 # function for plotting a dataframe containing variables dependencies with chi-squared values
@@ -209,13 +209,13 @@ dependency_v <- dependency_list(data)
 dependency_v <- dependency_v[dependency_v$features != "diagnosis",]
 ```
 
-We discard all the values which are indipendente so all the TRUE, which correspond with a p-value > 0.05.
+We discard all the values which are independent, so all the TRUE that correspond with a p-value > 0.05.
 
 ```{r}
 dependency_v <- dependency_v[dependency_v$indipendentV == "FALSE",]
 ```
 
-On the remaining ones, we select those with a chi-squared normalised values > 0.25.
+On the remaining ones, we select those with chi-squared normalised values > 0.25.
 
 ```{r}
 dependency_v <- dependency_v[dependency_v$chivaluesN > 0.25,]
@@ -234,9 +234,9 @@ On the remaining features, a more in-depth analysis can be conducted.
 
 ## A graphical way to see the features related to diagnosis
 
-In the previous paragraph we saw which features are related to the target variable diagnosis.
-In this paragraph we attempt to explain it by a graphical way: comparison histograms between features and the distribution of malignant or benign tumor diagnosis are generated. 
-These can be conveyed in order to make assertions about their distributions and significance.
+In the previous paragraph, we saw which features are related to the target variable diagnosis.
+In this paragraph we attempt to explain it in a graphical way: comparison histograms between features and the distribution of malignant or benign tumor diagnoses are generated. 
+These can be conveyed to make assertions about their distributions and significance.
 
 ```{r}
 #features_mean <- names(data)[2:11]
@@ -281,11 +281,11 @@ tl.cex = 0.5, tl.srt = 45, number.cex = 0.5)
 
 ```
 
-It is possible to verify the correlations among features to reduce their number, encreasing the explanability of the multilinear regression model we will face soon.
+It is possible to verify the correlations among features to reduce their number, increasing the explainability of the multilinear regression model we will face soon.
 
 ## Covariance and Correlation
 
-Following the scatter plot and the analysis above we can explore more the other variables.
+Following the scatter plot and the analysis above we can explore the other variables.
 
 ```{r}
 first_features <- data[c("radius_mean","perimeter_mean","area_mean","radius_worst",
@@ -328,7 +328,7 @@ corr_features_df <- corr_features_df %>% arrange(desc(correlation))
 corr_features_df
 ```
 
-From the plot and the correlation values we can see a very strong correlation between all the features, so we can drop them all except for one. 
+From the plot and the correlation values, we can see a very strong correlation between all the features, so we can drop them all except for one. 
 We select the feature which has the higher association with the response variable diagnosis so we select the perimeter_worst with a value of 0.6991.
 We now test the last remaining variables.
 
@@ -373,11 +373,11 @@ corr_features_df <- corr_features_df %>% arrange(desc(correlation))
 corr_features_df
 ```
 
-From the analysis and the plot we can see that concave.point_worst and concave.points_mean 
+From the analysis and the plot, we can see that concave.point_worst and concave.points_mean 
 are strongly correlated so we keep only concave.point_worst which has the higher association with diagnosis (0.6833). 
 
-Same goes for concavity and compacteness mean with they respective worst have a correlation value less than 0.6 but still strongly correlated. 
-We keep concavity_mean and compactness_mean whose have the higher association with the diagnosis (0.5640,0.3666).
+The same goes for concavity and compactness mean with their respective worst having a correlation value less than 0.6 but still strongly correlated. 
+We keep concavity_mean and compactness_mean which have a higher association with the diagnosis (0.5640,0.3666).
 
 As a summary, we plot the correlation matrix of selected features.
 
@@ -457,12 +457,12 @@ t.test(mdf$concave.points_worst,bdf$concave.points_worst, alternative="two.sided
 
 ```
 
-From the t value we can say that the better feature which helps us to distinguish
+From the t value, we can say that the better feature which helps us to distinguish
 malignant and benign is the **concave.point_worst** with a t value of 29.
 
 # Multiple Linear Regression Model
 
-We use the four selected features to apply the multiple linear regression model.
+We use the selected features to apply the multiple linear regression model.
 
 ```{r}
 reg_model <- lm(data$diagnosis ~ perimeter_worst
@@ -493,8 +493,8 @@ As we can see from the histogram and the qqplot, the distribution of the residua
 
 To confirm that, a check with the Shapiro–Wilk test is conducted.
 
-- H0: there is no difference between the residuals distribution and a normal distribution;
-- H1: the two distribution are not equal.
+- H0: there is no difference between the residuals distribution and normal distribution;
+- H1: the two distributions are not equal.
 
 ```{r}
 shapiro.test(resid(reg_model))
@@ -505,4 +505,4 @@ that the result is not statistically relevant.
 
 # Bibliography
 
-[1] https://cancer.ca/en/treatments/tests-and-procedures/fine-needle-aspiration-fna
+[1] Canadian Cancer Society, "Fine needle aspiration (FNA)", https://cancer.ca/en/treatments/tests-and-procedures/fine-needle-aspiration-fna, 2022
